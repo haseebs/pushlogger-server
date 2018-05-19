@@ -74,7 +74,6 @@ def add_logs(channel_name):
 
 #---------Controller for Logs --------#
 @APP.route('/logs/<channel_name>', methods=['GET', 'POST'])
-@login_required
 def logs(channel_name):
     if not channel_name:
         return 404
