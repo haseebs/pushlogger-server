@@ -3,8 +3,6 @@ from sqlalchemy import exc
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, request, jsonify
-from flask_login import LoginManager, current_user, login_user, logout_user, login_required
-from werkzeug.security import generate_password_hash
 
 #------------ Config ----------------#
 APP = Flask(__name__)
@@ -17,12 +15,6 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
                           'sqlite:///' + os.path.join(BASEDIR, 'pushlogger.db')
-#Login
-LOGIN_MANAGER = LoginManager()
-LOGIN_MANAGER.init_app(APP)
-@login_manager.user_loader
-def load_user(id):
-    return User.query.get(int(id))
 
 #--------- Functions for Log ---------#
 def get_logs():
@@ -49,36 +41,6 @@ def add_logs():
         DB.session.rollback()
         return 404
 
-#--------- Functions for User ---------#
-def login():
-     if current_user.is_authenticated:
-         return 200
-     elif request.form.get('email'):
-         user = User.query.filter_by(email=request.form.get('email')).first()
-         if user is not None and user.check_password(request.form.get('password')):
-             login_user(user, remember=True)
-             return 200
-     return 404
-
- def logout():
-     logout_user()
-     return 200
-
- def register():
-    if current_user.is_authenticated:
-        return 200
-    elif request.form.get('email'):
-        user = User(email=request.form.get('email'))
-        user.set_password(request.form.get('password'))
-        try:
-            db.session.add(user)
-            db.session.commit()
-            login_user(user, remember=True)
-            return 200
-        except (exc.SQLAlchemyError, exc.DBAPIError):
-            db.session.rollback()
-    return 404
-
 #---------Controller for Logs --------#
 @APP.route('/logs/', methods=['GET', 'POST'])
 @login_required
@@ -87,19 +49,6 @@ def logs():
         return get_logs()
     elif request.method == 'POST':
         return add_logs()
-
-#---------Controllers for User --------#
-@APP.route('/user/login', methods=['POST'])
-def user_login():
-    return login()
-
-@APP.route('/user/logout')
-def user_logout():
-    return logout()
-
-@APP.route('/user/register', methods=['POST'])
-def user_register():
-    return register()
 
 #-------- Initialize db and APP ---------#
 if __name__ == '__main__':
