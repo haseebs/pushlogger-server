@@ -2,7 +2,7 @@ import os
 from sqlalchemy import exc
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 
 #------------ Config ----------------#
 APP = Flask(__name__)
@@ -18,25 +18,22 @@ SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
 channels = {}
 
 def get_channel(channel_name):
-    channel_id = None
-    if channel_name in channels:
-        channel_id = channels[channel_name]
-    else:
-        channel = Channel.query.filter_by(name=channel_name)
-        if channel:
-            channels[channel_name] = channel.id
-            channel_id = channels[channel_name]
-    return channel_id
+    if not channel_name in channels:
+        channel = Channel.query.filter_by(name=channel_name).first()
+        if not channel:
+            return None
+        channels[channel_name] = channel.id
+    return channels[channel_name]
 
 def add_channel(channel_name):
     channel = Channel(name=channel_name)
     try:
         DB.session.add(channel)
         DB.session.commit()
-        return 200
+        return ('', 204)
     except (exc.SQLAlchemyError, exc.DBAPIError):
         DB.session.rollback()
-        return 404
+        return ('', 404)
 
 
 #--------- Functions for Log ---------#
@@ -47,7 +44,7 @@ def get_logs(channel_name):
     msges = []
     channel_id = get_channel(channel_name)
     if not channel_id:
-        return 404
+        abort(404)
     logs = Logs.query.filter_by(channel_id=channel_id)
     for msg in logs:
         msges.append(msg.to_json())
@@ -66,21 +63,21 @@ def add_logs(channel_name):
     try:
         DB.session.add(log_entry)
         DB.session.commit()
-        return 200
     except (exc.SQLAlchemyError, exc.DBAPIError):
         DB.session.rollback()
-        return 404
+        abort(404)
 
 
 #---------Controller for Logs --------#
 @APP.route('/logs/<channel_name>', methods=['GET', 'POST'])
 def logs(channel_name):
     if not channel_name:
-        return 404
+        abort(404)
     elif request.method == 'GET':
         return get_logs(channel_name)
     elif request.method == 'POST':
-        return add_logs(channel_name)
+        add_logs(channel_name)
+    return ('', 204)
 
 #-------- Initialize db and APP ---------#
 if __name__ == '__main__':

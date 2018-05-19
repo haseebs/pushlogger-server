@@ -2,10 +2,10 @@ from app import DB
 from datetime import datetime
 
 class Channel(DB.Model):
-    id = DB.Column(DB.Integer, autoincrement=True, unique=True)
-    name = DB.Column(DB.String(16), primary_key=True, index=True)
+    id = DB.Column(DB.Integer, autoincrement=True, primary_key=True)
+    name = DB.Column(DB.String(16), unique=True, index=True)
     timestamp = DB.Column(DB.DateTime, default=datetime.utcnow)
-    logs = DB.relationship("Logs", cascade="all,delete", backref="channel",
+    logs = DB.relationship("Logs", cascade="all,delete", backref="author",
                            lazy="dynamic")
 
     def __repr__(self):
@@ -22,7 +22,7 @@ class Logs(DB.Model):
     id = DB.Column(DB.Integer, primary_key=True)
     msg = DB.Column(DB.String(128))
     timestamp = DB.Column(DB.DateTime, default=datetime.utcnow)
-    channel_id = DB.Column(DB.Integer, db.ForeignKey("Channel.id", ondelete="CASCADE"))
+    channel_id = DB.Column(DB.Integer, DB.ForeignKey(Channel.id, ondelete="CASCADE"))
 
     def __repr__(self):
         return '<Log Message: {}>'.format(self.msg)
@@ -30,6 +30,7 @@ class Logs(DB.Model):
     def to_json(self):
         return {
             "Id": self.id,
+            "Channel id": self.channel_id,
             "Message": self.msg,
             "Timestamp": self.timestamp.strftime("%Y%m%d"),
         }
