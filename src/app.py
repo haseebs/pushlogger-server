@@ -13,10 +13,10 @@ APP.secret_key = '12345'
 from models import *
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
-SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-                          'sqlite:///' + os.path.join(BASEDIR, 'pushlogger.db')
-channels = {}
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(BASEDIR, 'pushlogger.db'))
+APP.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 
+channels = {}
 def get_all_channels():
     channels_json = []
     channels_all = Channel.query.all()
@@ -93,4 +93,5 @@ def channel():
 #-------- Initialize db and APP ---------#
 if __name__ == '__main__':
     init_db()
-    APP.run()
+    port = int(os.environ.get('PORT', 5000))
+    APP.run(host='0.0.0.0', port=port)
