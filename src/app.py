@@ -17,6 +17,13 @@ SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
                           'sqlite:///' + os.path.join(BASEDIR, 'pushlogger.db')
 channels = {}
 
+def get_all_channels():
+    channels_json = []
+    channels_all = Channel.query.all()
+    for channel in channels_all:
+        channels_json.append(channel.to_json())
+    return jsonify(channels_json)
+
 def get_channel(channel_name):
     if not channel_name in channels:
         channel = Channel.query.filter_by(name=channel_name).first()
@@ -78,6 +85,10 @@ def logs(channel_name):
     elif request.method == 'POST':
         add_logs(channel_name)
     return ('', 204)
+
+@APP.route('/channels', methods=['GET'])
+def channel():
+    return get_all_channels()
 
 #-------- Initialize db and APP ---------#
 if __name__ == '__main__':
