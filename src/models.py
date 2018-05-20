@@ -15,7 +15,7 @@ class Channel(DB.Model):
         return {
             "Id": self.id,
             "Channel Name": self.name,
-            "Timestamp": self.timestamp.strftime("%Y%m%d"),
+            "Timestamp": self.timestamp.strftime("%H:%M:%S"),
         }
 
 class Logs(DB.Model):
@@ -32,7 +32,7 @@ class Logs(DB.Model):
             "Id": self.id,
             "Channel id": self.channel_id,
             "Message": self.msg,
-            "Timestamp": self.timestamp.strftime("%Y%m%d"),
+            "Timestamp": self.timestamp.strftime("%H:%M:%S"),
         }
 
 def init_db():
