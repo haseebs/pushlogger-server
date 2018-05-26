@@ -51,6 +51,7 @@ def delete_channel(channel_name):
     try:
         DB.session.delete(channel)
         DB.session.commit()
+        channels.pop(channel_name)
         return ('', 204)
     except (exc.SQLAlchemyError, exc.DBAPIError):
         DB.session.rollback()
