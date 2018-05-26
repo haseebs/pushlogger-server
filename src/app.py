@@ -17,6 +17,8 @@ DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(BASEDI
 APP.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 
 channels = {}
+
+#--------- Functions for Channels ---------#
 def get_all_channels():
     channels_json = []
     channels_all = Channel.query.all()
@@ -24,12 +26,14 @@ def get_all_channels():
         channels_json.append(channel.to_json())
     return jsonify(channels_json)
 
-def get_channel(channel_name):
-    if not channel_name in channels:
+def get_channel(channel_name, get_full_channel=False):
+    if not channel_name in channels or get_full_channel:
         channel = Channel.query.filter_by(name=channel_name).first()
         if not channel:
             return None
         channels[channel_name] = channel.id
+        if get_full_channel:
+            return channel
     return channels[channel_name]
 
 def add_channel(channel_name):
@@ -42,6 +46,15 @@ def add_channel(channel_name):
         DB.session.rollback()
         return ('', 404)
 
+def delete_channel(channel_name):
+    channel = get_channel(channel_name, get_full_channel=True)
+    try:
+        DB.session.delete(channel)
+        DB.session.commit()
+        return ('', 204)
+    except (exc.SQLAlchemyError, exc.DBAPIError):
+        DB.session.rollback()
+        return ('', 404)
 
 #--------- Functions for Log ---------#
 def get_logs(channel_name):
@@ -75,9 +88,9 @@ def add_logs(channel_name):
         abort(404)
 
 
-#---------Controller for Logs --------#
+#---------Controllers --------#
 @APP.route('/logs/<channel_name>', methods=['GET', 'POST'])
-def logs(channel_name):
+def logs_router(channel_name):
     if not channel_name:
         abort(404)
     elif request.method == 'GET':
@@ -87,8 +100,12 @@ def logs(channel_name):
     return ('', 204)
 
 @APP.route('/channels', methods=['GET'])
-def channel():
+def channel_router():
     return get_all_channels()
+
+@APP.route('/delete/<channel_name>', methods=['GET'])
+def delete_channel_router(channel_name):
+    return delete_channel(channel_name)
 
 #-------- Initialize db and APP ---------#
 if __name__ == '__main__':
